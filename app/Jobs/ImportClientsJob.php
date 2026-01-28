@@ -64,8 +64,15 @@ class ImportClientsJob implements ShouldQueue
             $totalSkipped = 0;
             $currentRow = 0;
 
-            // Optional: Count total lines for percentage (expensive for large files, maybe estimate or skip)
-            // For now, we will just track processed count updates.
+            // Count total lines for percentage
+            $totalLines = 0;
+            $handle = fopen($this->filePath, "r");
+            while(!feof($handle)){
+                $line = fgets($handle);
+                if ($line !== false) $totalLines++;
+            }
+            fclose($handle);
+            $totalLines = max($totalLines - 1, 1); // Subtract header, ensure non-zero
 
             $desde = $this->dates['desde'] ?? null;
             $hasta = $this->dates['hasta'] ?? ($desde ?: null);
@@ -85,9 +92,8 @@ class ImportClientsJob implements ShouldQueue
                     if (!$fechaRow || $fechaRow < $desde || $fechaRow > $hasta) {
                         $totalSkipped++;
 
-                        // Update cache periodically even if skipping
                         if ($currentRow % 1000 == 0) {
-                            $this->updateProgress($cacheKey, $totalProcessed, $totalSkipped, "Filtrando registros... (Fila $currentRow)");
+                            $this->updateProgress($cacheKey, $totalProcessed, $totalSkipped, "Filtrando registros... (Fila $currentRow)", $totalLines);
                         }
                         continue;
                     }
@@ -102,7 +108,7 @@ class ImportClientsJob implements ShouldQueue
                     $totalProcessed += count($batchData);
                     $batchData = [];
 
-                    $this->updateProgress($cacheKey, $totalProcessed, $totalSkipped, "Procesando registros... ($totalProcessed insertados)");
+                    $this->updateProgress($cacheKey, $totalProcessed, $totalSkipped, "Procesando registros... ($totalProcessed insertados)", $totalLines);
                 }
             }
 
@@ -140,11 +146,14 @@ class ImportClientsJob implements ShouldQueue
         }
     }
 
-    private function updateProgress($key, $processed, $skipped, $message)
+    private function updateProgress($key, $processed, $skipped, $message, $totalLines)
     {
+        $totalProcessed = $processed + $skipped;
+        $percentage = ($totalLines > 0) ? round(($totalProcessed / $totalLines) * 100) : 0;
+
         Cache::put($key, [
             'status' => 'processing',
-            'progress' => 50, // Arbitrary or calculated if total lines known
+            'progress' => $percentage,
             'processed' => $processed,
             'skipped' => $skipped,
             'message' => $message
