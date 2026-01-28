@@ -13,14 +13,23 @@ class ImportarClientes extends Command
      *
      * @var string
      */
-    protected $signature = 'import:clientes {archivo : La ruta del archivo a importar}';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'import:clientes
+                            {archivo : La ruta del archivo a importar}
+                            {--desde= : Fecha inicial YYYYMMDD (Requerido para actualización)}
+                            {--hasta= : Fecha final YYYYMMDD (Opcional, defecto igual a desde)}
+                            {--full : Forzar carga completa (Peligroso: Ignora fechas)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Carga masiva de clientes desde un archivo delimitado por pipes (|) usando upsert y chunks.';
+    protected $description = 'Carga masiva de clientes con filtro de fechas para actualizaciones incrementales.';
 
     /**
      * Execute the console command.
@@ -28,10 +37,33 @@ class ImportarClientes extends Command
     public function handle()
     {
         $path = $this->argument('archivo');
+        $desde = $this->option('desde');
+        $hasta = $this->option('hasta');
+        $full = $this->option('full');
+
+        // Validación de seguridad: Se requiere filtro o flag full
+        if (!$full && !$desde) {
+            $this->error("¡ERROR DE SEGURIDAD!");
+            $this->error("Debes especificar una fecha de inicio (--desde=YYYYMMDD) para actualizar.");
+            $this->error("Si realmente deseas importar TODO el archivo, usa la opción --full.");
+            return 1;
+        }
 
         if (!file_exists($path)) {
             $this->error("El archivo no existe en la ruta: $path");
             return 1;
+        }
+
+        // Definir rango de fechas
+        if ($full) {
+            $this->warn("!!! MODO CARGA COMPLETA ACTIVADO !!! - Se procesarán todos los registros.");
+            if (!$this->confirm('¿Estás seguro de continuar?', true)) {
+                return 0;
+            }
+        } else {
+            // Si no se define hasta, es igual a desde (un solo día)
+            $hasta = $hasta ?: $desde;
+            $this->info("Modo Actualización Incremental: Filtrando registros con fecha_actualizacion entre $desde y $hasta");
         }
 
         $this->info("Iniciando importacion desde: $path");
@@ -40,6 +72,7 @@ class ImportarClientes extends Command
         $batchSize = 50;
         $batchData = [];
         $totalProcessed = 0;
+        $totalSkipped = 0;
         $startTime = microtime(true);
 
         // Columnas para el upsert (todas menos el PK que se usa para matchear)
@@ -49,6 +82,24 @@ class ImportarClientes extends Command
             // Validar si es cabecera (usualmente el código cliente es numérico)
             if (!is_numeric($row[0])) {
                 continue;
+            }
+
+            // Lógica de Filtrado por Fecha
+            if (!$full) {
+                // La fecha de actualización está en el índice 1 (según el mapeo original)
+                // Formato en CSV: YYYYMMDD (string)
+                $fechaRow = isset($row[1]) ? trim($row[1]) : null;
+
+                if (!$fechaRow) {
+                    $totalSkipped++;
+                    continue;
+                }
+
+                // Comparación de cadenas YYYYMMDD es segura y rápida
+                if ($fechaRow < $desde || $fechaRow > $hasta) {
+                    $totalSkipped++;
+                    continue;
+                }
             }
 
             // Validar que la fila tenga la cantidad esperada de columnas o manejarlo
