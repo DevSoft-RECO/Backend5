@@ -27,3 +27,7 @@ Route::middleware('sso')->group(function () {
         }
     });
 });
+
+// Import Routes
+Route::post('/import/upload', [App\Http\Controllers\ImportController::class, 'upload']);
+Route::get('/import/status/{id}', [App\Http\Controllers\ImportController::class, 'status']);

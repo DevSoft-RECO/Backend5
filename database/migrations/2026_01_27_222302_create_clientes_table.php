@@ -43,7 +43,7 @@ return new class extends Migration
             // 14. Fecha Nacimiento (date)
             $table->date('fecha_nacimiento')->nullable();
             // 15. Actividad Economica IVE (string)
-            $table->string('actividad_economica_ive', 20)->nullable();
+            $table->string('actividad_economica_ive', 100)->nullable();
             // 16. Alto Riesgo (string)
             $table->string('alto_riesgo', 5)->nullable();
             // 17. Id Reple (string)
