@@ -120,6 +120,11 @@ class ImportClientsJob implements ShouldQueue
 
             fclose($file);
 
+            // Cleanup: Delete file after successful processing
+            if (file_exists($this->filePath)) {
+                @unlink($this->filePath);
+            }
+
             // Final Success State
             Cache::put($cacheKey, [
                 'status' => 'completed',
