@@ -35,7 +35,7 @@ class ImportColocacionJob implements ShouldQueue
      */
     public function handle()
     {
-        $cacheKey = "import_colocacion_{$this->jobId}";
+        $cacheKey = "import_job_{$this->jobId}";
 
         try {
             if (!file_exists($this->filePath)) {
