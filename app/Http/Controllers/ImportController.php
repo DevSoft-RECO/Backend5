@@ -17,6 +17,7 @@ class ImportController extends Controller
     {
         $request->validate([
             'file' => 'required|file|mimes:csv,txt',
+            'type' => 'required|string|in:clientes,colocacion',
             'desde' => 'nullable|string|size:8', // YYYYMMDD
             'hasta' => 'nullable|string|size:8',
             'full' => 'nullable|boolean'
@@ -24,7 +25,9 @@ class ImportController extends Controller
 
         try {
             $file = $request->file('file');
-            $fileName = 'import_' . time() . '.csv';
+            $type = $request->type;
+            $fileName = "import_{$type}_" . time() . '.csv';
+
             // Save to storage/app/import using 'local' disk explicitly
             $path = $file->storeAs('import', $fileName, 'local');
             $absolutePath = \Illuminate\Support\Facades\Storage::disk('local')->path($path);
@@ -36,8 +39,12 @@ class ImportController extends Controller
                 'full' => filter_var($request->full, FILTER_VALIDATE_BOOLEAN)
             ];
 
-            // Dispatch Job
-            ImportClientsJob::dispatch($absolutePath, $dates, $jobId);
+            // Dispatch appropriate Job based on type
+            match ($type) {
+                'clientes' => \App\Jobs\ImportClientsJob::dispatch($absolutePath, $dates, $jobId),
+                'colocacion' => \App\Jobs\ImportColocacionJob::dispatch($absolutePath, $jobId),
+                default => throw new \Exception("Tipo de importación no válido."),
+            };
 
             // Initialize cache
             Cache::put("import_job_{$jobId}", [
@@ -53,7 +60,7 @@ class ImportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error("Upload Error: " . $e->getMessage());
+            Log::error("Upload Error ({$type}): " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al subir el archivo: ' . $e->getMessage()
