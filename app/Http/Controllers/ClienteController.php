@@ -16,10 +16,19 @@ class ClienteController extends Controller
     public function search(Request $request)
     {
         $request->validate([
-            'dpi' => 'required|string',
+            'field' => 'required|string|in:dpi,codigo_cliente',
+            'query' => 'required|string',
         ]);
 
-        $cliente = Cliente::where('dpi', $request->dpi)->first();
+        $query = Cliente::query();
+
+        if ($request->field === 'dpi') {
+            $query->where('dpi', $request->input('query'));
+        } else {
+            $query->where('codigo_cliente', $request->input('query'));
+        }
+
+        $cliente = $query->first();
 
         if (!$cliente) {
             return response()->json([
@@ -28,9 +37,17 @@ class ClienteController extends Controller
             ], 404);
         }
 
+        // Search for placement data using codigo_cliente
+        $colocacion = \Illuminate\Support\Facades\DB::table('datos_colocacion')
+            ->where('cliente', $cliente->codigo_cliente)
+            ->first();
+
         return response()->json([
             'success' => true,
-            'data' => $cliente
+            'data' => [
+                'personal' => $cliente,
+                'colocacion' => $colocacion
+            ]
         ]);
     }
 }
