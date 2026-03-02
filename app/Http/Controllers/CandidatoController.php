@@ -10,13 +10,7 @@ class CandidatoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DB::table('candidatos')
-            ->join('urnas', 'candidatos.urna_id', '=', 'urnas.id')
-            ->select('candidatos.*', 'urnas.nombre as urna_nombre');
-
-        if ($request->has('urna_id')) {
-            $query->where('urna_id', $request->urna_id);
-        }
+        $query = DB::table('candidatos');
 
         if ($request->has('anio')) {
             $query->where('anio', $request->anio);
@@ -37,7 +31,6 @@ class CandidatoController extends Controller
     {
         $request->validate([
             'nombre_completo' => 'required|string',
-            'urna_id' => 'required|exists:urnas,id',
             'anio' => 'required|integer',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,avif,webp|max:2048'
         ]);
@@ -58,9 +51,7 @@ class CandidatoController extends Controller
 
         $id = DB::table('candidatos')->insertGetId([
             'nombre_completo' => $request->nombre_completo,
-            'urna_id' => $request->urna_id,
             'anio' => $request->anio,
-            'total_votos' => 0,
             'foto_path' => $foto_path,
             'created_at' => now(),
             'updated_at' => now(),
@@ -76,9 +67,7 @@ class CandidatoController extends Controller
     public function show($id)
     {
         $candidato = DB::table('candidatos')
-            ->join('urnas', 'candidatos.urna_id', '=', 'urnas.id')
-            ->select('candidatos.*', 'urnas.nombre as urna_nombre')
-            ->where('candidatos.id', $id)
+            ->where('id', $id)
             ->first();
 
         if (!$candidato) {
@@ -94,7 +83,6 @@ class CandidatoController extends Controller
     {
         $request->validate([
             'nombre_completo' => 'required|string',
-            'urna_id' => 'required|exists:urnas,id',
             'anio' => 'required|integer',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,avif,webp|max:2048'
         ]);
@@ -106,7 +94,6 @@ class CandidatoController extends Controller
 
         $foto_path = $candidato->foto_path;
         if ($request->hasFile('foto')) {
-            // Eliminar foto anterior si existe
             if ($foto_path && File::exists(public_path($foto_path))) {
                 File::delete(public_path($foto_path));
             }
@@ -125,7 +112,6 @@ class CandidatoController extends Controller
 
         DB::table('candidatos')->where('id', $id)->update([
             'nombre_completo' => $request->nombre_completo,
-            'urna_id' => $request->urna_id,
             'anio' => $request->anio,
             'foto_path' => $foto_path,
             'updated_at' => now(),

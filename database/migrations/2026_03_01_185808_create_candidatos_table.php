@@ -14,9 +14,7 @@ return new class extends Migration
         Schema::create('candidatos', function (Blueprint $table) {
             $table->id();
             $table->string('nombre_completo');
-            $table->foreignId('urna_id')->constrained('urnas')->onDelete('cascade');
             $table->integer('anio');
-            $table->integer('total_votos')->default(0);
             $table->string('foto_path')->nullable();
             $table->timestamps();
         });

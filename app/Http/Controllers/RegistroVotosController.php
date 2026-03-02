@@ -4,60 +4,90 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Candidato;
+use App\Models\Urna;
+use App\Models\ResultadoVoto;
 
 class RegistroVotosController extends Controller
 {
     /**
-     * Get candidates filtered by Urna.
+     * Get all candidates with their votes for a specific urn.
      */
-    public function getCandidatosByUrna(Request $request)
+    public function getVotosByUrna($urna_id)
     {
-        $request->validate([
-            'urna_id' => 'required|exists:urnas,id'
-        ]);
+        $urna = Urna::findOrFail($urna_id);
 
-        $candidatos = DB::table('candidatos')
-            ->where('urna_id', $request->urna_id)
-            ->get();
+        // Get all candidates
+        $candidatos = Candidato::all()->map(function($candidato) use ($urna_id) {
+            // Find votes for this candidate in this urn
+            $resultado = ResultadoVoto::where('urna_id', $urna_id)
+                ->where('candidato_id', $candidato->id)
+                ->first();
 
-        // Add full URL for photos
-        $candidatos->transform(function($candidato) {
-            $candidato->foto_url = $candidato->foto_path ? asset($candidato->foto_path) : null;
-            return $candidato;
+            return [
+                'id' => $candidato->id,
+                'nombre_completo' => $candidato->nombre_completo,
+                'votos' => $resultado ? $resultado->votos : 0,
+                'foto_url' => $candidato->foto_path ? asset($candidato->foto_path) : null,
+            ];
         });
 
         return response()->json([
             'success' => true,
-            'data' => $candidatos
+            'data' => [
+                'urna' => [
+                    'id' => $urna->id,
+                    'nombre' => $urna->nombre,
+                    'votos_nulos' => $urna->votos_nulos,
+                    'votos_blancos' => $urna->votos_blancos,
+                ],
+                'candidatos' => $candidatos
+            ]
         ]);
     }
 
     /**
-     * Update the total votes for a candidate.
+     * Save all votes for a specific urn in one batch.
      */
-    public function updateVotos(Request $request, $id)
+    public function saveVotosByUrna(Request $request, $urna_id)
     {
         $request->validate([
-            'total_votos' => 'required|integer|min:0'
+            'votos_nulos' => 'required|integer|min:0',
+            'votos_blancos' => 'required|integer|min:0',
+            'votos_candidatos' => 'required|array',
+            'votos_candidatos.*.id' => 'required|exists:candidatos,id',
+            'votos_candidatos.*.votos' => 'required|integer|min:0',
         ]);
 
-        $affected = DB::table('candidatos')
-            ->where('id', $id)
-            ->update([
-                'total_votos' => $request->total_votos,
-                'updated_at' => now()
+        DB::beginTransaction();
+        try {
+            // Update Urna (Null and Blank votes)
+            $urna = Urna::findOrFail($urna_id);
+            $urna->update([
+                'votos_nulos' => $request->votos_nulos,
+                'votos_blancos' => $request->votos_blancos,
             ]);
 
-        if ($affected) {
+            // Update individual candidate votes for this urn
+            foreach ($request->votos_candidatos as $voto) {
+                ResultadoVoto::updateOrCreate(
+                    ['urna_id' => $urna_id, 'candidato_id' => $voto['id']],
+                    ['votos' => $voto['votos']]
+                );
+            }
+
+            DB::commit();
+
             return response()->json([
                 'success' => true,
-                'message' => 'Votos actualizados correctamente'
+                'message' => 'Resultados de la urna actualizados correctamente'
             ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar los resultados: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'No se pudo actualizar los votos o el candidato no existe'
-        ], 404);
     }
 }

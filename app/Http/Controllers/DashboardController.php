@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Models\Candidato;
 
 class DashboardController extends Controller
 {
@@ -17,6 +18,7 @@ class DashboardController extends Controller
     {
         $year = Carbon::now()->year;
 
+        // Stats for assistance
         $total = DB::table('confirmacion_asistencia')
             ->whereYear('fecha_asistencia', $year)
             ->count();
@@ -31,17 +33,23 @@ class DashboardController extends Controller
             ->where('tipo_asistencia', 'manual')
             ->count();
 
-        $candidatos = DB::table('candidatos')
-            ->join('urnas', 'candidatos.urna_id', '=', 'urnas.id')
-            ->where('candidatos.anio', $year)
-            ->select('candidatos.*', 'urnas.nombre as urna_nombre')
-            ->orderBy('total_votos', 'desc')
-            ->get();
+        // Stats for candidates (aggregated from all urnas)
+        $candidatos = Candidato::where('anio', $year)
+            ->get()
+            ->map(function($candidato) {
+                $totalVotos = DB::table('resultados_votos')
+                    ->where('candidato_id', $candidato->id)
+                    ->sum('votos');
 
-        $candidatos->transform(function($candidato) {
-            $candidato->foto_url = $candidato->foto_path ? asset($candidato->foto_path) : null;
-            return $candidato;
-        });
+                return [
+                    'id' => $candidato->id,
+                    'nombre_completo' => $candidato->nombre_completo,
+                    'total_votos' => (int)$totalVotos,
+                    'foto_url' => $candidato->foto_path ? asset($candidato->foto_path) : null,
+                ];
+            })
+            ->sortByDesc('total_votos')
+            ->values();
 
         return response()->json([
             'success' => true,

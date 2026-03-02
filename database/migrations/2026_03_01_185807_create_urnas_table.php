@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('nombre');
             $table->string('descripcion')->nullable();
+            $table->integer('votos_nulos')->default(0);
+            $table->integer('votos_blancos')->default(0);
             $table->timestamps();
         });
     }
