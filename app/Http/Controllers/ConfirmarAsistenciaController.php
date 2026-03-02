@@ -80,4 +80,44 @@ class ConfirmarAsistenciaController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Confirm attendance and record in DB.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function confirm(Request $request)
+    {
+        $request->validate([
+            'codigo_cliente' => 'required|integer',
+            'dpi' => 'required|string',
+            'nombre_completo' => 'required|string',
+            'ubicacion' => 'required|string',
+            'tipo_asistencia' => 'nullable|string|in:sistema,manual'
+        ]);
+
+        try {
+            DB::table('confirmacion_asistencia')->insert([
+                'codigo_cliente' => $request->codigo_cliente,
+                'dpi' => $request->dpi,
+                'nombre_completo' => $request->nombre_completo,
+                'ubicacion' => $request->ubicacion,
+                'tipo_asistencia' => $request->input('tipo_asistencia', 'sistema'),
+                'fecha_asistencia' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Asistencia confirmada correctamente.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al confirmar asistencia: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

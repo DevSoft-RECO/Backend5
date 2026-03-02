@@ -33,3 +33,4 @@ Route::post('/import/upload', [App\Http\Controllers\ImportController::class, 'up
 Route::post('/import/status/{id}', [App\Http\Controllers\ImportController::class, 'status']);
 Route::post('/clientes/search', [App\Http\Controllers\ClienteController::class, 'search']);
 Route::post('/asistencia/verificar', [App\Http\Controllers\ConfirmarAsistenciaController::class, 'verify']);
+Route::post('/asistencia/confirmar', [App\Http\Controllers\ConfirmarAsistenciaController::class, 'confirm']);
