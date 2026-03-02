@@ -39,7 +39,7 @@ class CandidatoController extends Controller
             'nombre_completo' => 'required|string',
             'urna_id' => 'required|exists:urnas,id',
             'anio' => 'required|integer',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,avif,webp|max:2048'
         ]);
 
         $foto_path = null;
