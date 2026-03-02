@@ -78,6 +78,9 @@ class RegistroVotosController extends Controller
 
             DB::commit();
 
+            // Disparar actualización en tiempo real pasando un payload (p.ej. el ID de la urna o flag)
+            \App\Events\VotesUpdated::dispatch(['urna_id' => $urna_id, 'status' => 'updated']);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Resultados de la urna actualizados correctamente'
