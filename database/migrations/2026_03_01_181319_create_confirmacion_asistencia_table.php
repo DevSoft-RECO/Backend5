@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('genero', 20)->nullable();
             $table->dateTime('fecha_asistencia');
             $table->enum('tipo_asistencia', ['sistema', 'manual']);
+            $table->text('observacion')->nullable();
             $table->timestamps();
         });
     }

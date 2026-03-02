@@ -96,13 +96,15 @@ class ConfirmarAsistenciaController extends Controller
             'ubicacion' => 'required|string',
             'tipo_asistencia' => 'nullable|string|in:sistema,manual',
             'edad' => 'nullable|integer',
-            'genero' => 'nullable|string|max:20'
+            'genero' => 'nullable|string|max:20',
+            'observacion' => 'nullable|string'
         ]);
 
         try {
             $tipoAsistencia = $request->input('tipo_asistencia', 'sistema');
             $edad = $request->edad;
             $genero = $request->genero;
+            $observacion = $request->observacion;
 
             // If it's system (automatic) and age/gender are missing, try to fetch from Cliente table
             if ($tipoAsistencia === 'sistema' && (is_null($edad) || is_null($genero))) {
@@ -121,6 +123,7 @@ class ConfirmarAsistenciaController extends Controller
                 'edad' => $edad,
                 'genero' => $genero,
                 'tipo_asistencia' => $tipoAsistencia,
+                'observacion' => $observacion,
                 'fecha_asistencia' => Carbon::now(),
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
