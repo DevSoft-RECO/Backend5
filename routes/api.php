@@ -30,5 +30,6 @@ Route::middleware('sso')->group(function () {
 
 // Import Routes
 Route::post('/import/upload', [App\Http\Controllers\ImportController::class, 'upload']);
-Route::get('/import/status/{id}', [App\Http\Controllers\ImportController::class, 'status']);
+Route::post('/import/status/{id}', [App\Http\Controllers\ImportController::class, 'status']);
 Route::post('/clientes/search', [App\Http\Controllers\ClienteController::class, 'search']);
+Route::post('/asistencia/verificar', [App\Http\Controllers\ConfirmarAsistenciaController::class, 'verify']);

@@ -1,0 +1,83 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Cliente;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class ConfirmarAsistenciaController extends Controller
+{
+    /**
+     * Verify if a client is eligible for assistance.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function verify(Request $request)
+    {
+        $request->validate([
+            'codigo_cliente' => 'required|integer',
+        ]);
+
+        $codigoCliente = $request->codigo_cliente;
+        $cliente = Cliente::where('codigo_cliente', $codigoCliente)->first();
+
+        if (!$cliente) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cliente no encontrado'
+            ], 404);
+        }
+
+        // 1. Exact Age Calculation (Float for precision)
+        $fechaNacimiento = Carbon::parse($cliente->fecha_nacimiento);
+        $hoy = Carbon::now();
+        $edad = $fechaNacimiento->diffInDays($hoy) / 365.25;
+        $cumpleEdad = $edad >= 18;
+
+        // 2. Aportaciones Check
+        $saldoAportaciones = (float) $cliente->saldo_aportaciones;
+        $cumpleAportaciones = $saldoAportaciones >= 25.0;
+
+        // 3. Colocacion Check (Mora)
+        $colocacion = DB::table('datos_colocacion')
+            ->where('cliente', $codigoCliente)
+            ->first();
+
+        $cumpleMora = true; // Default to true if not found in colocacion
+        if ($colocacion) {
+            $cumpleMora = (int) $colocacion->diasmora === 0;
+        }
+
+        $aprobado = $cumpleEdad && $cumpleAportaciones && $cumpleMora;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'approved' => $aprobado,
+                'checks' => [
+                    'edad' => [
+                        'val' => $edad,
+                        'passed' => $cumpleEdad,
+                        'message' => $cumpleEdad ? 'Mayor de 18 años' : 'Menor de 18 años'
+                    ],
+                    'aportaciones' => [
+                        'val' => $saldoAportaciones,
+                        'passed' => $cumpleAportaciones,
+                        'message' => $cumpleAportaciones ? 'Saldo de aportaciones suficiente' : 'Saldo de aportaciones insuficiente (< Q25.00)'
+                    ],
+                    'mora' => [
+                        'val' => $colocacion ? $colocacion->diasmora : 0,
+                        'passed' => $cumpleMora,
+                        'has_credit' => !!$colocacion,
+                        'message' => $colocacion
+                            ? ($cumpleMora ? 'Sin mora acumulada' : 'Posee mora en sus créditos')
+                            : 'No tiene créditos'
+                    ]
+                ]
+            ]
+        ]);
+    }
+}
