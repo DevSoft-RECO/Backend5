@@ -37,3 +37,6 @@ Route::post('/asistencia/confirmar', [App\Http\Controllers\ConfirmarAsistenciaCo
 Route::get('/asistencia/reporte', [App\Http\Controllers\AsistenciaReporteController::class, 'index']);
 Route::get('/asistencia/export', [App\Http\Controllers\AsistenciaReporteController::class, 'export']);
 Route::get('/dashboard/stats', [App\Http\Controllers\DashboardController::class, 'stats']);
+
+Route::apiResource('urnas', App\Http\Controllers\UrnaController::class);
+Route::apiResource('candidatos', App\Http\Controllers\CandidatoController::class);
