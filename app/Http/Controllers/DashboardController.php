@@ -31,13 +31,26 @@ class DashboardController extends Controller
             ->where('tipo_asistencia', 'manual')
             ->count();
 
+        $candidatos = DB::table('candidatos')
+            ->join('urnas', 'candidatos.urna_id', '=', 'urnas.id')
+            ->where('candidatos.anio', $year)
+            ->select('candidatos.*', 'urnas.nombre as urna_nombre')
+            ->orderBy('total_votos', 'desc')
+            ->get();
+
+        $candidatos->transform(function($candidato) {
+            $candidato->foto_url = $candidato->foto_path ? asset($candidato->foto_path) : null;
+            return $candidato;
+        });
+
         return response()->json([
             'success' => true,
             'data' => [
                 'total' => $total,
                 'sistema' => $sistema,
                 'manual' => $manual,
-                'year' => $year
+                'year' => $year,
+                'candidatos' => $candidatos
             ]
         ]);
     }
