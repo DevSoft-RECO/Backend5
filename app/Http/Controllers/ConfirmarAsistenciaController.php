@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Cliente;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Events\AsistenciaRegistrada;
 
 class ConfirmarAsistenciaController extends Controller
 {
@@ -128,6 +129,8 @@ class ConfirmarAsistenciaController extends Controller
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
+
+            broadcast(new AsistenciaRegistrada());
 
             return response()->json([
                 'success' => true,
