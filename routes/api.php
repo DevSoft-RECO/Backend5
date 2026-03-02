@@ -40,3 +40,7 @@ Route::get('/dashboard/stats', [App\Http\Controllers\DashboardController::class,
 
 Route::apiResource('urnas', App\Http\Controllers\UrnaController::class);
 Route::apiResource('candidatos', App\Http\Controllers\CandidatoController::class);
+
+// Registro de Votos
+Route::get('/votos/candidatos', [App\Http\Controllers\RegistroVotosController::class, 'getCandidatosByUrna']);
+Route::patch('/votos/candidatos/{id}/actualizar', [App\Http\Controllers\RegistroVotosController::class, 'updateVotos']);
