@@ -29,7 +29,7 @@ return [
             // ---------------------------------------------------------
             // 2. ENTORNO PRODUCCIÓN (Google Cloud)
             // ---------------------------------------------------------
-            'https://creditos.yamankutx.com.gt',       // Tu App Madre Real
+            'https://asamblea.yamankutx.com.gt',       // Tu App Madre Real
         ],
 
     'allowed_origins_patterns' => [],
