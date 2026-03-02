@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('dpi', 20);
             $table->string('nombre_completo', 255);
             $table->string('ubicacion', 255);
+            $table->integer('edad')->nullable();
+            $table->string('genero', 20)->nullable();
             $table->dateTime('fecha_asistencia');
             $table->enum('tipo_asistencia', ['sistema', 'manual']);
             $table->timestamps();
