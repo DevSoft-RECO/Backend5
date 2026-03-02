@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\Candidato;
+use App\Models\Urna;
 
 class DashboardController extends Controller
 {
@@ -18,8 +19,8 @@ class DashboardController extends Controller
     {
         $year = Carbon::now()->year;
 
-        // Stats for assistance
-        $total = DB::table('confirmacion_asistencia')
+        // Stats for assistance (Attendance)
+        $total_asistencia = DB::table('confirmacion_asistencia')
             ->whereYear('fecha_asistencia', $year)
             ->count();
 
@@ -32,6 +33,10 @@ class DashboardController extends Controller
             ->whereYear('fecha_asistencia', $year)
             ->where('tipo_asistencia', 'manual')
             ->count();
+
+        // Vote Stats (Aggregated from all urnas)
+        $votos_nulos = (int) Urna::sum('votos_nulos');
+        $votos_blancos = (int) Urna::sum('votos_blancos');
 
         // Stats for candidates (aggregated from all urnas)
         $candidatos = Candidato::where('anio', $year)
@@ -51,14 +56,21 @@ class DashboardController extends Controller
             ->sortByDesc('total_votos')
             ->values();
 
+        $votos_validos = $candidatos->sum('total_votos');
+        $total_votantes = $votos_validos + $votos_nulos + $votos_blancos;
+
         return response()->json([
             'success' => true,
             'data' => [
-                'total' => $total,
+                'total' => $total_asistencia, // Historically attendance
                 'sistema' => $sistema,
                 'manual' => $manual,
                 'year' => $year,
-                'candidatos' => $candidatos
+                'candidatos' => $candidatos,
+                'votos_validos' => $votos_validos,
+                'votos_nulos' => $votos_nulos,
+                'votos_blancos' => $votos_blancos,
+                'total_votantes' => $total_votantes
             ]
         ]);
     }
