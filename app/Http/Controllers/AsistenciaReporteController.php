@@ -44,4 +44,56 @@ class AsistenciaReporteController extends Controller
             'data' => $asistencias
         ]);
     }
+
+    /**
+     * Export assistance records to CSV.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
+    public function export(Request $request)
+    {
+        $year = $request->input('year', Carbon::now()->year);
+
+        $query = DB::table('confirmacion_asistencia')
+            ->whereYear('fecha_asistencia', $year)
+            ->orderBy('fecha_asistencia', 'asc');
+
+        $headers = [
+            'Content-type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=asistencias_{$year}.csv",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0'
+        ];
+
+        $columns = ['ID', 'Codigo Cliente', 'DPI', 'Nombre Completo', 'Ubicacion', 'Fecha Asistencia', 'Tipo Asistencia'];
+
+        $callback = function() use ($query, $columns) {
+            $file = fopen('php://output', 'w');
+
+            // Add UTF-8 BOM for Excel compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            fputcsv($file, $columns);
+
+            $query->chunk(100, function($asistencias) use ($file) {
+                foreach ($asistencias as $asistencia) {
+                    fputcsv($file, [
+                        $asistencia->id,
+                        $asistencia->codigo_cliente,
+                        $asistencia->dpi,
+                        $asistencia->nombre_completo,
+                        $asistencia->ubicacion,
+                        $asistencia->fecha_asistencia,
+                        $asistencia->tipo_asistencia,
+                    ]);
+                }
+            });
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }
