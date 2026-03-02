@@ -35,3 +35,4 @@ Route::post('/clientes/search', [App\Http\Controllers\ClienteController::class, 
 Route::post('/asistencia/verificar', [App\Http\Controllers\ConfirmarAsistenciaController::class, 'verify']);
 Route::post('/asistencia/confirmar', [App\Http\Controllers\ConfirmarAsistenciaController::class, 'confirm']);
 Route::get('/asistencia/reporte', [App\Http\Controllers\AsistenciaReporteController::class, 'index']);
+Route::get('/dashboard/stats', [App\Http\Controllers\DashboardController::class, 'stats']);
