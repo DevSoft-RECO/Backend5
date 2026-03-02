@@ -16,19 +16,14 @@ class ClienteController extends Controller
     public function search(Request $request)
     {
         $request->validate([
-            'field' => 'required|string|in:dpi,codigo_cliente',
             'query' => 'required|string',
         ]);
 
-        $query = Cliente::query();
+        $searchValue = $request->input('query');
 
-        if ($request->field === 'dpi') {
-            $query->where('dpi', $request->input('query'));
-        } else {
-            $query->where('codigo_cliente', $request->input('query'));
-        }
-
-        $cliente = $query->first();
+        $cliente = Cliente::where('dpi', $searchValue)
+            ->orWhere('codigo_cliente', $searchValue)
+            ->first();
 
         if (!$cliente) {
             return response()->json([
