@@ -59,6 +59,21 @@ class DashboardController extends Controller
         $votos_validos = $candidatos->sum('total_votos');
         $total_votantes = $votos_validos + $votos_nulos + $votos_blancos;
 
+        // Active Associates Check:
+        // 1. age >= 18
+        // 2. saldo_aportaciones >= 25
+        // 3. if exists in datos_colocacion, diasmora == 0
+        $asociados_activos = \App\Models\Cliente::where('saldo_aportaciones', '>=', 25)
+            ->whereRaw('TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) >= 18')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('datos_colocacion')
+                    ->whereRaw('datos_colocacion.cliente = clientes.codigo_cliente')
+                    ->where('datos_colocacion.diasmora', '>', 0);
+            })
+            ->count();
+        $asociados_quorum = floor($asociados_activos / 2) + 1;
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -70,7 +85,9 @@ class DashboardController extends Controller
                 'votos_validos' => $votos_validos,
                 'votos_nulos' => $votos_nulos,
                 'votos_blancos' => $votos_blancos,
-                'total_votantes' => $total_votantes
+                'total_votantes' => $total_votantes,
+                'asociados_activos' => $asociados_activos,
+                'asociados_quorum' => $asociados_quorum
             ]
         ]);
     }
