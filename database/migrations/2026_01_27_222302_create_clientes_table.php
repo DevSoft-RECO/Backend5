@@ -21,15 +21,15 @@ return new class extends Migration
            $table->date('actualizacion')->nullable()->index();
 
             // 3. Nombre1 (string) - Puede ser Razon Social
-            $table->string('nombre1', 150)->nullable();
+            $table->string('nombre1', 150)->nullable()->index();
             // 4. Nombre2 (string)
-            $table->string('nombre2', 150)->nullable();
+            $table->string('nombre2', 150)->nullable()->index();
             // 5. Nombre3 (string)
-            $table->string('nombre3', 150)->nullable();
+            $table->string('nombre3', 150)->nullable()->index();
             // 6. Apellido1 (string)
-            $table->string('apellido1', 150)->nullable();
+            $table->string('apellido1', 150)->nullable()->index();
             // 7. Apellido2 (string)
-            $table->string('apellido2', 150)->nullable();
+            $table->string('apellido2', 150)->nullable()->index();
 
             // 8. Celular (string)
             $table->string('celular', 50)->nullable();
@@ -41,7 +41,7 @@ return new class extends Migration
             $table->string('tipo_cliente', 50)->nullable();
 
             // 11. Fecha Nacimiento (date)
-            $table->date('fecha_nacimiento')->nullable();
+            $table->date('fecha_nacimiento')->nullable()->index();
 
             // 12. Dpi (string)
             $table->string('dpi', 20)->nullable()->index();
@@ -55,7 +55,7 @@ return new class extends Migration
             $table->integer('edad')->nullable();
 
             // 16. Saldo_Aportaciones (decimal)
-            $table->decimal('saldo_aportaciones', 18, 2)->default(0);
+            $table->decimal('saldo_aportaciones', 18, 2)->default(0)->index();
 
             // 17. Saldo_Ahorros (decimal)
             $table->decimal('saldo_ahorros', 18, 2)->default(0);

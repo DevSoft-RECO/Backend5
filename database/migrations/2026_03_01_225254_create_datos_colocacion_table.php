@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('cliente')->index();
             $table->string('numerodocumento', 50)->unique();
-            $table->integer('diasmora')->default(0);
+            $table->integer('diasmora')->default(0)->index();
             $table->decimal('saldocapital', 18, 2)->default(0);
             $table->timestamps();
         });

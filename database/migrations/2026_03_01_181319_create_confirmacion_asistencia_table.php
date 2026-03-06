@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('ubicacion', 255);
             $table->integer('edad')->nullable();
             $table->string('genero', 20)->nullable();
-            $table->dateTime('fecha_asistencia');
-            $table->enum('tipo_asistencia', ['sistema', 'manual']);
+            $table->dateTime('fecha_asistencia')->index();
+            $table->enum('tipo_asistencia', ['sistema', 'manual'])->index();
             $table->text('observacion')->nullable();
             $table->timestamps();
         });

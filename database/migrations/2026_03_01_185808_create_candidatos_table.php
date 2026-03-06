@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('candidatos', function (Blueprint $table) {
             $table->id();
             $table->string('nombre_completo');
-            $table->integer('anio');
+            $table->integer('anio')->index();
             $table->string('foto_path')->nullable();
             $table->timestamps();
         });
