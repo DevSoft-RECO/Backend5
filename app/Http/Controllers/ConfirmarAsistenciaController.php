@@ -138,12 +138,18 @@ class ConfirmarAsistenciaController extends Controller
                 'genero' => $genero,
                 'tipo_asistencia' => $tipoAsistencia,
                 'observacion' => $observacion,
+                'usuario_registro' => $request->user()?->username ?? 'sistema',
                 'fecha_asistencia' => Carbon::now(),
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
 
-            broadcast(new AsistenciaRegistrada());
+            try {
+                broadcast(new AsistenciaRegistrada());
+            } catch (\Exception $e) {
+                // Log error or ignore to keep registration working even if broadcast fails
+                \Log::error('Error al transmitir asistencia: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
