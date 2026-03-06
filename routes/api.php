@@ -33,6 +33,7 @@ Route::middleware('sso')->group(function () {
     Route::post('/asistencia/confirmar', [App\Http\Controllers\ConfirmarAsistenciaController::class, 'confirm']);
     Route::get('/asistencia/reporte', [App\Http\Controllers\AsistenciaReporteController::class, 'index']);
     Route::get('/asistencia/export', [App\Http\Controllers\AsistenciaReporteController::class, 'export']);
+    Route::delete('/asistencia/{id}', [App\Http\Controllers\AsistenciaReporteController::class, 'destroy']);
     Route::get('/dashboard/stats', [App\Http\Controllers\DashboardController::class, 'stats']);
 
     Route::apiResource('urnas', App\Http\Controllers\UrnaController::class);

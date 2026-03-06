@@ -100,4 +100,45 @@ class AsistenciaReporteController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    /**
+     * Delete an assistance record.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy($id)
+    {
+        $user = auth()->user();
+        $roles = $user->roles ?? [];
+
+        if (!in_array('Super Admin', $roles)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tiene permisos para eliminar registros.'
+            ], 403);
+        }
+
+        try {
+            $deleted = DB::table('confirmacion_asistencia')->where('id', $id)->delete();
+
+            if ($deleted) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Asistencia eliminada correctamente.'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró el registro.'
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
