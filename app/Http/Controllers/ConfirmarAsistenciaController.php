@@ -138,7 +138,7 @@ class ConfirmarAsistenciaController extends Controller
                 'genero' => $genero,
                 'tipo_asistencia' => $tipoAsistencia,
                 'observacion' => $observacion,
-                'usuario_registro' => $request->user()?->username ?? 'sistema',
+                'usuario_registro' => $request->user()?->username ?? $request->user()?->name ?? 'sistema',
                 'fecha_asistencia' => Carbon::now(),
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
