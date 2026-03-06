@@ -67,7 +67,7 @@ class AsistenciaReporteController extends Controller
             'Expires'             => '0'
         ];
 
-        $columns = ['ID', 'Codigo Cliente', 'DPI', 'Nombre Completo', 'Ubicacion', 'Edad', 'Género', 'Fecha Asistencia', 'Tipo Asistencia', 'Observación'];
+        $columns = ['ID', 'Codigo Cliente', 'DPI', 'Nombre Completo', 'Ubicacion', 'Edad', 'Género', 'Fecha Asistencia', 'Tipo Asistencia', 'Usuario Registro', 'Observación'];
 
         $callback = function() use ($query, $columns) {
             $file = fopen('php://output', 'w');
@@ -89,6 +89,7 @@ class AsistenciaReporteController extends Controller
                         $asistencia->genero,
                         $asistencia->fecha_asistencia,
                         $asistencia->tipo_asistencia,
+                        $asistencia->usuario_registro,
                         $asistencia->observacion,
                     ]);
                 }
