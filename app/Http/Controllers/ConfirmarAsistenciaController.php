@@ -102,6 +102,19 @@ class ConfirmarAsistenciaController extends Controller
         ]);
 
         try {
+            // Check if already registered this year by DPI
+            $yaRegistrado = DB::table('confirmacion_asistencia')
+                ->where('dpi', $request->dpi)
+                ->whereYear('fecha_asistencia', Carbon::now()->year)
+                ->exists();
+
+            if ($yaRegistrado) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya se ha registrado la asistencia para este DPI en el año actual.'
+                ], 422);
+            }
+
             $tipoAsistencia = $request->input('tipo_asistencia', 'sistema');
             $edad = $request->edad;
             $genero = $request->genero;
