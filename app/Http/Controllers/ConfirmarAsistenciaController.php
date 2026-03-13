@@ -43,13 +43,24 @@ class ConfirmarAsistenciaController extends Controller
         $cumpleAportaciones = $saldoAportaciones >= 25.0;
 
         // 3. Colocacion Check (Mora)
-        $colocacion = DB::table('datos_colocacion')
+        $colocaciones = DB::table('datos_colocacion')
             ->where('cliente', $codigoCliente)
-            ->first();
+            ->get();
 
-        $cumpleMora = true; // Default to true if not found in colocacion
-        if ($colocacion) {
-            $cumpleMora = (int) $colocacion->diasmora === 0;
+        $cumpleMora = true;
+        $maxMora = 0;
+        $hasCredits = $colocaciones->isNotEmpty();
+
+        if ($hasCredits) {
+            foreach ($colocaciones as $colocacion) {
+                $moraCredito = (int) $colocacion->diasmora;
+                if ($moraCredito > 0) {
+                    $cumpleMora = false;
+                }
+                if ($moraCredito > $maxMora) {
+                    $maxMora = $moraCredito;
+                }
+            }
         }
 
         $aprobado = $cumpleEdad && $cumpleAportaciones && $cumpleMora;
@@ -70,11 +81,18 @@ class ConfirmarAsistenciaController extends Controller
                         'message' => $cumpleAportaciones ? 'Saldo de aportaciones suficiente' : 'Saldo de aportaciones insuficiente (< Q25.00)'
                     ],
                     'mora' => [
-                        'val' => $colocacion ? $colocacion->diasmora : 0,
+                        'val' => $maxMora,
                         'passed' => $cumpleMora,
-                        'has_credit' => !!$colocacion,
-                        'message' => $colocacion
-                            ? ($cumpleMora ? 'Sin mora acumulada' : 'Posee mora en sus créditos')
+                        'has_credit' => $hasCredits,
+                        'credits_count' => $colocaciones->count(),
+                        'credits' => $colocaciones->map(function($c) {
+                            return [
+                                'numero_credito' => $c->numerodocumento ?? $c->cuentadiaria ?? $c->numero_credito ?? 'N/A',
+                                'diasmora' => (int) $c->diasmora
+                            ];
+                        }),
+                        'message' => $hasCredits
+                            ? ($cumpleMora ? 'Sin mora acumulada en sus ' . $colocaciones->count() . ' créditos' : 'Posee mora en uno o más de sus créditos')
                             : 'No tiene créditos'
                     ]
                 ]

@@ -33,15 +33,16 @@ class ClienteController extends Controller
         }
 
         // Search for placement data using codigo_cliente
-        $colocacion = \Illuminate\Support\Facades\DB::table('datos_colocacion')
+        $colocaciones = \Illuminate\Support\Facades\DB::table('datos_colocacion')
             ->where('cliente', $cliente->codigo_cliente)
-            ->first();
+            ->get();
 
         return response()->json([
             'success' => true,
             'data' => [
                 'personal' => $cliente,
-                'colocacion' => $colocacion
+                'colocacion' => $colocaciones->first(), // Maintain first for compatibility
+                'colocaciones' => $colocaciones // New field for all credits
             ]
         ]);
     }
@@ -102,13 +103,14 @@ class ClienteController extends Controller
         // Let's attach colocacion to each so it's ready.
 
         $clientesConColocacion = $clientes->map(function ($cliente) {
-            $colocacion = \Illuminate\Support\Facades\DB::table('datos_colocacion')
+            $colocaciones = \Illuminate\Support\Facades\DB::table('datos_colocacion')
                 ->where('cliente', $cliente->codigo_cliente)
-                ->first();
+                ->get();
 
             return [
                 'personal' => $cliente,
-                'colocacion' => $colocacion
+                'colocacion' => $colocaciones->first(),
+                'colocaciones' => $colocaciones
             ];
         });
 
