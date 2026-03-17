@@ -119,4 +119,70 @@ class ClienteController extends Controller
             'data' => $clientesConColocacion
         ]);
     }
+
+    /**
+     * Combined search for external apps (Mother App).
+     * Searches by dpi, codigo_cliente, or full name.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function searchExternal(Request $request)
+    {
+        $request->validate([
+            'query' => 'required|string|min:2',
+        ]);
+
+        $queryInput = trim($request->input('query'));
+        
+        // Check if it looks like a DPI or Code (mostly numeric)
+        $isNumeric = is_numeric($queryInput);
+
+        $query = Cliente::query();
+
+        if ($isNumeric) {
+            $query->where(function($q) use ($queryInput) {
+                $q->where('dpi', $queryInput)
+                  ->orWhere('codigo_cliente', $queryInput);
+            });
+        } else {
+            $words = preg_split('/\s+/', $queryInput);
+            
+            // Re-using the name concatenation logic
+            $rawConcat = "
+                TRIM(
+                    REPLACE(
+                        CONCAT_WS(' ',
+                            IFNULL(nombre1, ''),
+                            IFNULL(nombre2, ''),
+                            IFNULL(nombre3, ''),
+                            IFNULL(apellido1, ''),
+                            IFNULL(apellido2, '')
+                        ),
+                        '  ', ' '
+                    )
+                )
+            ";
+
+            foreach ($words as $word) {
+                $searchValue = '%' . $word . '%';
+                $query->whereRaw(\Illuminate\Support\Facades\DB::raw("$rawConcat LIKE ?"), [$searchValue]);
+            }
+        }
+
+        // We only return the basic client information from the 'clientes' table
+        $clientes = $query->limit(30)->get();
+
+        if ($clientes->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontraron resultados'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $clientes
+        ]);
+    }
 }

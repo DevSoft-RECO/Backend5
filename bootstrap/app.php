@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'sso' => ValidateSSO::class,
+            'mother_app' => \App\Http\Middleware\EnsureMotherApp::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

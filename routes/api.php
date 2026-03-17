@@ -47,4 +47,9 @@ Route::post('/import/upload', [App\Http\Controllers\ImportController::class, 'up
 Route::post('/import/status/{id}', [App\Http\Controllers\ImportController::class, 'status']);
 });
 
+// Rutas Externas (App Madre)
+Route::middleware('mother_app')->prefix('external')->group(function () {
+    Route::post('/clientes/search', [App\Http\Controllers\ClienteController::class, 'searchExternal']);
+});
+
 
