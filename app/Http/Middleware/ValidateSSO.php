@@ -51,11 +51,32 @@ class ValidateSSO
             if ($response->successful()) {
                 // ÉXITO: Tenemos conexión. Usamos los datos completos del usuario (Roles actualizados).
                 $userData = $response->json();
+                
+                if (isset($userData['data'])) {
+                    $userData = $userData['data']; // Desempaquetar si viene paginado / AppResource
+                }
+
+                // CRÍTICO: "Aplanar" Arrays de Objetos Spatie -> Strings puros
+                if (isset($userData['roles']) && is_array($userData['roles'])) {
+                    $userData['roles'] = array_map(function($r) { 
+                        return is_array($r) ? ($r['name'] ?? $r) : $r; 
+                    }, $userData['roles']);
+                }
+                
+                if (isset($userData['permisos']) && is_array($userData['permisos'])) {
+                    $userData['permisos'] = array_map(function($p) { 
+                        return is_array($p) ? ($p['name'] ?? $p) : $p; 
+                    }, $userData['permisos']);
+                }
+
+                // Estandarizar para el frontend
+                $userData['roles_list'] = $userData['roles'] ?? [];
+                $userData['permissions'] = $userData['permisos'] ?? [];
+
                 $userData['id'] = $decoded->sub; // Aseguramos que el ID venga del token
                 $user = new GenericUser($userData);
             } else {
-                // FALLBACK: Si la Madre está caída o lenta, no bloqueamos al usuario.
-                // Usamos los datos básicos que vienen incrustados en el token JWT.
+                // Fallback básico si la madre no responde
                 $userData = (array) $decoded;
                 $userData['id'] = $decoded->sub;
                 $user = new GenericUser($userData);
@@ -63,6 +84,7 @@ class ValidateSSO
 
             // Establecer el usuario en la sesión actual de la solicitud
             Auth::setUser($user);
+
 
         } catch (Exception $e) {
             // Si el token es inválido, expirado o manipulado, devolvemos 401
